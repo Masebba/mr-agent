@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
+import { getFunctions } from "firebase/functions";
 // 1) Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBeWNy6_I7aDzrQv9XR0dBTIu56lHOOHI4",
@@ -13,24 +13,12 @@ const firebaseConfig = {
   appId: "1:456622068114:web:41a38e4f89882472d0b14b"
   // …other keys…
 };
-
-// 2) Initialize Firebase App
+// 2) Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
 // 3) Export Auth & Firestore
 export const auth = getAuth(app);
-
 export const db = getFirestore(app);
-// Enable offline persistence (optional warning suppressed)
-enableIndexedDbPersistence(db).catch((err) => {
-  console.warn("IndexedDB persistence not enabled:", err.message);
-});
-
-// 4) Export Functions (only once)
+enableIndexedDbPersistence(db).catch(() => { });
+// 4) Initialize & export Functions (for createAuthUser)
 export const functions = getFunctions(app);
-
-// 5) If in development, connect to the local emulator
-if (process.env.NODE_ENV === "development") {
-  // The emulator must be running: `firebase emulators:start --only functions`
-  connectFunctionsEmulator(functions, "localhost", 5001);
-}
+export { app };

@@ -1,9 +1,19 @@
 // src/pages/Incidents.js
-import { useEffect, useState } from "react";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { useState } from "react";
+import {
+    collection,
+    addDoc,
+    serverTimestamp,
+} from "firebase/firestore";
+import {
+    getStorage,
+    ref as storageRef,
+    uploadBytes,
+    getDownloadURL,
+} from "firebase/storage";
+import { db, app } from "../firebase";
 
-// ── 1) Hardcoded admin‐unit hierarchy (same as Votes.js) ──
+// ── 1) Hardcoded hierarchy (only used to extract village list) ──
 const adminHierarchy = {
     Butaleja: {
         "Bukooli North": {
@@ -17,85 +27,93 @@ const adminHierarchy = {
     },
 };
 
+// ── 2) Utility: flatten all villages for the single district ──
+const allVillages = [];
+Object.values(adminHierarchy["Butaleja"]).forEach((subObj) => {
+    Object.values(subObj).forEach((villageArr) => {
+        villageArr.forEach((v) => allVillages.push(v));
+    });
+});
+
 export default function Incidents() {
-    // ── 2) Administrative dropdown state ──
-    const districts = Object.keys(adminHierarchy); // ["Butaleja"]
-    const [district, setDistrict] = useState("Butaleja");
+    // ── 3) State for “Village (Location)” only ──
+    const [village, setVillage] = useState(allVillages[0] || "");
 
-    const [subcounty, setSubcounty] = useState(
-        Object.keys(adminHierarchy["Butaleja"])[0]
-    );
-    const [parish, setParish] = useState(
-        Object.keys(adminHierarchy["Butaleja"][subcounty])[0]
-    );
-    const [village, setVillage] = useState(
-        adminHierarchy["Butaleja"][subcounty][parish][0]
-    );
-
-    // ── 3) Incident form fields ──
+    // ── 4) Incident form fields ──
     const [headline, setHeadline] = useState("");
     const [description, setDescription] = useState("");
 
-    // ── 4) Feedback message ──
+    // ── 5) Photo state ──
+    const [photoFile, setPhotoFile] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
+
+    // ── 6) Feedback message ──
     const [feedback, setFeedback] = useState({ text: "", type: "" });
 
-    // ── 5) Update subcounty/parish/village when district changes ──
-    useEffect(() => {
-        const firstSub = Object.keys(adminHierarchy[district])[0];
-        setSubcounty(firstSub);
+    const storage = getStorage(app);
 
-        const firstPar = Object.keys(adminHierarchy[district][firstSub])[0];
-        setParish(firstPar);
+    // ── 7) Handle photo selection ──
+    const handlePhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setPhotoFile(file);
+            const reader = new FileReader();
+            reader.onload = () => setPhotoPreview(reader.result);
+            reader.readAsDataURL(file);
+        } else {
+            setPhotoFile(null);
+            setPhotoPreview(null);
+        }
+    };
 
-        const firstVil = adminHierarchy[district][firstSub][firstPar][0];
-        setVillage(firstVil);
-    }, [district]);
-
-    // ── 6) Update parish/village when subcounty changes ──
-    useEffect(() => {
-        const availableParishes = Object.keys(
-            adminHierarchy[district][subcounty] || {}
-        );
-        const newParish = availableParishes[0] || "";
-        setParish(newParish);
-
-        const newVillages =
-            adminHierarchy[district][subcounty]?.[newParish] || [];
-        setVillage(newVillages[0] || "");
-    }, [district, subcounty]);
-
-    // ── 7) Update village when parish changes ──
-    useEffect(() => {
-        const villages =
-            adminHierarchy[district][subcounty]?.[parish] || [];
-        setVillage(villages[0] || "");
-    }, [district, subcounty, parish]);
-
-    // ── 8) Handle form submission ──
+    // ── 8) Handle form submission (with optional photo upload) ──
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFeedback({ text: "", type: "" });
 
         if (!headline.trim()) {
-            setFeedback({ text: "Headline is required.", type: "error" });
+            setFeedback({ text: "Subject is required.", type: "error" });
             return;
         }
 
+        // 8a) Upload photo if provided
+        let photoUrl = "";
+        if (photoFile) {
+            try {
+                const filePath = `incidentPhotos/${Date.now()}_${photoFile.name}`;
+                const photoRef = storageRef(storage, filePath);
+                await uploadBytes(photoRef, photoFile);
+                photoUrl = await getDownloadURL(photoRef);
+            } catch (err) {
+                console.error("Error uploading incident photo:", err);
+                setFeedback({
+                    text: "Failed to upload photo. Try again.",
+                    type: "error",
+                });
+                return;
+            }
+        }
+
+        // 8b) Write incident document
         try {
             await addDoc(collection(db, "incidents"), {
                 headline: headline.trim(),
                 description: description.trim(),
-                district,
-                subcounty,
-                parish,
+                district: "Butaleja",
                 village,
+                photoUrl,
                 createdAt: serverTimestamp(),
             });
-            setFeedback({ text: "Incident reported successfully!", type: "success" });
-            // Reset form fields
+            setFeedback({
+                text: "Incident reported successfully!",
+                type: "success",
+            });
+            // Clear form
             setHeadline("");
             setDescription("");
-            // Keep dropdowns at current selection
+            setVillage(allVillages[0] || "");
+            setPhotoFile(null);
+            setPhotoPreview(null);
         } catch (err) {
             console.error("Error reporting incident:", err);
             setFeedback({
@@ -120,11 +138,14 @@ export default function Incidents() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="bg-white p-4 rounded shadow space-y-4">
-                {/* Headline */}
+            <form
+                onSubmit={handleSubmit}
+                className="bg-white p-4 rounded shadow space-y-4"
+            >
+                {/* Subject */}
                 <div className="flex flex-col">
                     <label htmlFor="headline" className="text-sm font-medium mb-1">
-                        Headline
+                        Subject
                     </label>
                     <input
                         id="headline"
@@ -151,91 +172,51 @@ export default function Incidents() {
                     />
                 </div>
 
-                {/* Administrative Units (two-column on md) */}
-                <div className="md:flex md:space-x-2">
-                    {/* District */}
-                    <div className="flex-1 flex flex-col mb-2 md:mb-0">
-                        <label htmlFor="district" className="text-sm font-medium mb-1">
-                            District
-                        </label>
-                        <select
-                            id="district"
-                            value={district}
-                            onChange={(e) => setDistrict(e.target.value)}
-                            className="w-full p-2 border rounded text-sm"
-                        >
-                            {districts.map((dist) => (
-                                <option key={dist} value={dist}>
-                                    {dist}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Subcounty */}
-                    <div className="flex-1 flex flex-col">
-                        <label htmlFor="subcounty" className="text-sm font-medium mb-1">
-                            Subcounty
-                        </label>
-                        <select
-                            id="subcounty"
-                            value={subcounty}
-                            onChange={(e) => setSubcounty(e.target.value)}
-                            className="w-full p-2 border rounded text-sm"
-                        >
-                            {Object.keys(adminHierarchy[district]).map((sc) => (
-                                <option key={sc} value={sc}>
-                                    {sc}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                {/* Only Village Dropdown */}
+                <div className="flex flex-col">
+                    <label htmlFor="village" className="text-sm font-medium mb-1">
+                        Village (Location)
+                    </label>
+                    <select
+                        id="village"
+                        value={village}
+                        onChange={(e) => setVillage(e.target.value)}
+                        className="w-full p-2 border rounded text-sm"
+                    >
+                        {allVillages.map((v) => (
+                            <option key={v} value={v}>
+                                {v}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
-                <div className="md:flex md:space-x-2">
-                    {/* Parish */}
-                    <div className="flex-1 flex flex-col mb-2 md:mb-0">
-                        <label htmlFor="parish" className="text-sm font-medium mb-1">
-                            Parish
-                        </label>
-                        <select
-                            id="parish"
-                            value={parish}
-                            onChange={(e) => setParish(e.target.value)}
-                            className="w-full p-2 border rounded text-sm"
-                        >
-                            {Object.keys(adminHierarchy[district][subcounty]).map((pr) => (
-                                <option key={pr} value={pr}>
-                                    {pr}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Village */}
-                    <div className="flex-1 flex flex-col">
-                        <label htmlFor="village" className="text-sm font-medium mb-1">
-                            Village (Location)
-                        </label>
-                        <select
-                            id="village"
-                            value={village}
-                            onChange={(e) => setVillage(e.target.value)}
-                            className="w-full p-2 border rounded text-sm"
-                        >
-                            {adminHierarchy[district][subcounty][parish].map((v) => (
-                                <option key={v} value={v}>
-                                    {v}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                {/* Photo Capture */}
+                <div className="flex flex-col">
+                    <label htmlFor="photo" className="text-sm font-medium mb-1">
+                        Incident Photo
+                    </label>
+                    <input
+                        id="photo"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handlePhotoChange}
+                        className="w-full text-sm"
+                    />
+                    {photoPreview && (
+                        <img
+                            src={photoPreview}
+                            alt="Incident Preview"
+                            className="mt-2 h-32 object-contain rounded border"
+                        />
+                    )}
                 </div>
 
                 {/* Submit Button */}
                 <button
                     type="submit"
-                    className="w-full bg-blue-600 text-white p-2 rounded text-sm hover:bg-blue-700 transition"
+                    className="w-full bg-fuchsia-950 text-white p-2 rounded text-sm hover:bg-purple-950 transition"
                 >
                     Submit Incident
                 </button>

@@ -3,21 +3,74 @@ import React, { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 
-const positions = ["President", "Parliament", "Chairperson LCV"];
-const districts = ["Butaleja"];
+// Administrative hierarchy (reuse same as other pages)
+const adminHierarchy = {
+  Butaleja: {
+    "Bukooli North": {
+      "Bwikhonge Parish": ["Bukolu Village", "Bukuchony Village"],
+      "Buseta Parish": ["Buseta Central", "Buseta East"],
+    },
+    Budaka: {
+      "Gweri Parish": ["Gweri Central", "Gweri North"],
+      "Koglansu Parish": ["Koglansu Main", "Koglansu East"],
+    },
+  },
+};
+
+// Position options matching candidate page
+const positions = [
+  "President",
+  "Member of Parliament",
+  "Woman Member of Parliament",
+  "Chairperson LCV",
+];
 
 export default function Reports() {
-  const [position, setPosition] = useState("Parliament");
+  // Filters state
+  const [position, setPosition] = useState("Member of Parliament");
   const [district, setDistrict] = useState("Butaleja");
+  const [subcounty, setSubcounty] = useState(Object.keys(adminHierarchy["Butaleja"])[0]);
+  const [parish, setParish] = useState(
+    Object.keys(adminHierarchy["Butaleja"][subcounty])[0]
+  );
+  const [village, setVillage] = useState(
+    adminHierarchy["Butaleja"][subcounty][parish][0]
+  );
+
+  // Data state
   const [candidates, setCandidates] = useState([]);
   const [voteTotals, setVoteTotals] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // Reset dependent filters
+  useEffect(() => {
+    const firstSub = Object.keys(adminHierarchy[district])[0];
+    setSubcounty(firstSub);
+    const firstPar = Object.keys(adminHierarchy[district][firstSub])[0];
+    setParish(firstPar);
+    const firstVil = adminHierarchy[district][firstSub][firstPar][0];
+    setVillage(firstVil);
+  }, [district]);
+
+  useEffect(() => {
+    const parishes = Object.keys(adminHierarchy[district][subcounty] || {});
+    const newPar = parishes[0] || "";
+    setParish(newPar);
+    const villages = adminHierarchy[district][subcounty]?.[newPar] || [];
+    setVillage(villages[0] || "");
+  }, [district, subcounty]);
+
+  useEffect(() => {
+    const villages = adminHierarchy[district][subcounty]?.[parish] || [];
+    setVillage(villages[0] || "");
+  }, [district, subcounty, parish]);
+
+  // Load report data
   useEffect(() => {
     let mounted = true;
     async function loadData() {
       setLoading(true);
-      // Fetch candidates
+      // fetch candidates for position
       const candQ = query(
         collection(db, "candidates"),
         where("position", "==", position),
@@ -26,26 +79,23 @@ export default function Reports() {
       const candSnap = await getDocs(candQ);
       const candList = candSnap.docs.map((d) => ({ id: d.id, name: d.data().name }));
 
-      // Initialize totals
+      // init totals
       const totals = {};
-      candList.forEach((c) => {
-        totals[c.id] = 0;
-      });
+      candList.forEach((c) => (totals[c.id] = 0));
 
-      // Fetch votes
+      // fetch votes matching all filters
       const voteQ = query(
         collection(db, "votes"),
         where("position", "==", position),
-        where("district", "==", district)
+        where("district", "==", district),
+        where("subcounty", "==", subcounty),
+        where("parish", "==", parish),
+        where("village", "==", village)
       );
       const voteSnap = await getDocs(voteQ);
-      voteSnap.docs.forEach((vdoc) => {
-        const d = vdoc.data();
-        const cid = d.candidateId;
-        const count = d.votes || 0;
-        if (cid in totals) {
-          totals[cid] += count;
-        }
+      voteSnap.docs.forEach((v) => {
+        const d = v.data();
+        if (d.candidateId in totals) totals[d.candidateId] += d.votes || 0;
       });
 
       if (mounted) {
@@ -58,88 +108,104 @@ export default function Reports() {
     return () => {
       mounted = false;
     };
-  }, [position, district]);
+  }, [position, district, subcounty, parish, village]);
 
   const downloadCSV = () => {
     let csv = "Candidate,Total Votes\n";
     candidates.forEach((c) => {
-      const count = voteTotals[c.id] || 0;
-      csv += `"${c.name}",${count}\n`;
+      csv += `"${c.name}",${voteTotals[c.id] || 0}\n`;
     });
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${district}_${position}_results.csv`;
+    a.download = `${district}_${subcounty}_${parish}_${village}_${position}_report.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Reports</h2>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Reports</h2>
 
-      <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
-        <div className="flex-1 flex flex-col">
-          <label className="text-sm font-medium mb-1">Position</label>
-          <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
-            className="p-2 border rounded text-sm"
-          >
-            {positions.map((pos) => (
-              <option key={pos} value={pos}>
-                {pos}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex-1 flex flex-col">
-          <label className="text-sm font-medium mb-1">District</label>
-          <select
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            className="p-2 border rounded text-sm"
-          >
-            {districts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-2 bg-white p-2 rounded shadow text-xs">
+        <select
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+          className="p-1 border rounded"
+        >
+          {positions.map((pos) => (
+            <option key={pos} value={pos}>{pos}</option>
+          ))}
+        </select>
+        <select
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+          className="p-1 border rounded"
+        >
+          {Object.keys(adminHierarchy).map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+        <select
+          value={subcounty}
+          onChange={(e) => setSubcounty(e.target.value)}
+          className="p-1 border rounded"
+        >
+          {Object.keys(adminHierarchy[district]).map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <select
+          value={parish}
+          onChange={(e) => setParish(e.target.value)}
+          className="p-1 border rounded"
+        >
+          {Object.keys(adminHierarchy[district][subcounty]).map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+        <select
+          value={village}
+          onChange={(e) => setVillage(e.target.value)}
+          className="p-1 border rounded"
+        >
+          {adminHierarchy[district][subcounty][parish].map((v) => (
+            <option key={v} value={v}>{v}</option>
+          ))}
+        </select>
+        <button
+          onClick={downloadCSV}
+          className="bg-purple-950 text-white p-1 rounded text-xs hover:bg-fuchsia-900"
+        >
+          Download CSV
+        </button>
       </div>
 
-      <div className="bg-white p-4 rounded shadow">
+      {/* Results table */}
+      <div className="bg-white p-2 rounded shadow overflow-x-auto text-xs">
         {loading ? (
           <p className="text-sm text-gray-600">Loading data…</p>
         ) : candidates.length === 0 ? (
-          <p className="text-sm text-gray-600">No candidates found.</p>
+          <p className="text-sm text-gray-600">No candidates for selected filters.</p>
         ) : (
-          <>
-            <table className="w-full text-sm border">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2 text-left">Candidate</th>
-                  <th className="p-2 text-left">Total Votes</th>
+          <table className="w-full border-collapse">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-1 text-left border">Candidate</th>
+                <th className="p-1 text-left border">Total Votes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {candidates.map((c) => (
+                <tr key={c.id} className="border-b">
+                  <td className="p-1 border">{c.name}</td>
+                  <td className="p-1 border">{voteTotals[c.id] || 0}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {candidates.map((c) => (
-                  <tr key={c.id} className="border-b">
-                    <td className="p-2">{c.name}</td>
-                    <td className="p-2">{voteTotals[c.id] || 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <button
-              onClick={downloadCSV}
-              className="mt-4 bg-blue-600 text-white p-2 rounded text-sm hover:bg-blue-700"
-            >
-              Download CSV
-            </button>
-          </>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

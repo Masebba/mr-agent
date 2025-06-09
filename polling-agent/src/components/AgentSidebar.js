@@ -1,15 +1,13 @@
-// src/components/AdminSidebar.js
+// src/components/AgentSidebar.js
 import React from "react";
 import { NavLink } from "react-router-dom";
 
-export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
+export default function AgentSidebar({ sidebarOpen, setSidebarOpen }) {
     const links = [
-        { to: "/admin", label: "Dashboard" },
-        { to: "/admin/manage-agents", label: "Manage Agents" },
-        //       { to: "/admin/manage-candidates", label: "Manage Candidates" },
-        { to: "/admin/review-incidents", label: "Review Incidents" },
-        { to: "/admin/reports", label: "Reports" },
-        { to: "/admin/settings", label: "Settings" },
+        { to: "/dashboard", label: "Overview" },
+        { to: "/dashboard/votes", label: "Vote Entry" },
+        { to: "/dashboard/incidents", label: "Incidents" },
+        { to: "/dashboard/settings", label: "Settings" },
     ];
 
     return (
@@ -24,25 +22,30 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
                 </button>
             </div>
 
-            {/* Sidebar */}
+            {/* 
+         Sidebar now has:
+         - fixed position spanning full height: `h-screen fixed inset-y-0 left-0`
+         - width 64 (w-64)
+         - background white, shadow
+      */}
             <aside
                 className={`
           fixed inset-y-0 left-0 bg-white shadow-md overflow-y-auto transition-transform duration-200 z-40
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0 md:static md:shadow-none w-64
+          md:translate-x-0 md:static md:shadow-none w-64 h-screen
         `}
             >
                 <div className="p-4 border-b">
-                    <h1 className="text-xl font-bold">Admin</h1>
+                    <h1 className="text-xl font-bold">Agent Panel</h1>
                 </div>
                 <nav className="px-2 py-4 space-y-1">
                     {links.map(({ to, label }) => (
                         <NavLink
                             key={to}
                             to={to}
-                            end={to === "/admin"}
+                            end={to === "/dashboard"}
                             className={({ isActive }) =>
-                                `block px-4 py-2 rounded text-sm hover:bg-fuchsia-100 ${isActive ? "bg-purple-200 font-semibold" : ""
+                                `block px-4 py-2 rounded text-sm hover:bg-fuchsia-100 ${isActive ? "bg-fuchsia-200 font-semibold" : ""
                                 }`
                             }
                             onClick={() => setSidebarOpen(false)}

@@ -28,22 +28,21 @@ export default function ReviewIncidents() {
       <h2 className="text-2xl font-semibold">Review Incidents</h2>
 
       {incidents.length === 0 ? (
-        <p className="text-sm text-gray-600">No incident reports.</p>
+        <p className="text-sm text-fuchsia-600">No incident reports.</p>
       ) : (
         <div className="space-y-2">
           {incidents.map((inc) => (
             <div
               key={inc.id}
-              className={`p-4 rounded shadow ${
-                inc.status === "resolved" ? "bg-green-50 border border-green-200" : "bg-white"
-              }`}
+              className={`p-4 rounded shadow ${inc.status === "resolved" ? "bg-purple-100 border border-fuchsia-200" : "bg-white"
+                }`}
             >
               <div className="flex justify-between">
                 <h3 className="text-lg font-medium">{inc.headline}</h3>
                 {inc.status !== "resolved" && (
                   <button
                     onClick={() => markResolved(inc)}
-                    className="text-blue-600 hover:underline text-sm"
+                    className="text-fuchsia-600 hover:underline text-sm"
                   >
                     Mark Resolved
                   </button>

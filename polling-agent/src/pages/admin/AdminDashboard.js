@@ -5,7 +5,7 @@ import { NavLink } from "react-router-dom";
 export default function AdminDashboard() {
     const links = [
         { to: "manage-agents", label: "Manage Agents" },
-        { to: "manage-candidates", label: "Manage Candidates" },
+        //        { to: "manage-candidates", label: "Manage Candidates" },
         { to: "review-incidents", label: "Review Incidents" },
         { to: "reports", label: "Reports" },
     ];
@@ -20,7 +20,7 @@ export default function AdminDashboard() {
                             key={to}
                             to={to}
                             className={({ isActive }) =>
-                                `block px-3 py-2 rounded hover:bg-gray-100 ${isActive ? "bg-blue-100 font-semibold" : ""
+                                `block px-3 py-2 rounded hover:bg-fuchsia-100 ${isActive ? "bg-purple-100 font-semibold" : ""
                                 }`
                             }
                         >

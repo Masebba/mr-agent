@@ -10,13 +10,13 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null); 
-  const [role, setRole] = useState(null);        
+  const [currentUser, setCurrentUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("AuthStateChanged: user =", user);
+      console.log("AuthStateChanged → user =", user);
       if (user) {
         try {
           const userDocRef = doc(db, "users", user.uid);
@@ -42,7 +42,7 @@ export function AuthProvider({ children }) {
           }
           setCurrentUser(user);
           setRole(data.role);
-          console.log("Setting currentUser and role to:", data.role);
+          console.log("Setting currentUser & role:", data.role);
         } catch (err) {
           console.error("Error fetching userDoc:", err);
           await signOut(auth);
@@ -56,7 +56,6 @@ export function AuthProvider({ children }) {
       }
       setLoading(false);
     });
-
     return unsubscribe;
   }, []);
 

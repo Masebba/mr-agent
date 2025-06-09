@@ -1,3 +1,4 @@
+{/*
 // src/pages/admin/SuperAdminDashboard.js
 import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -13,8 +14,8 @@ export default function SuperAdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      {/* Sidebar */}
+    <div className="min-h-screen flex bg-fuchsia-50">
+      {/* Sidebar *
       <aside className="w-64 bg-white border-r">
         <div className="p-4">
           <h1 className="text-xl font-bold">Super Admin</h1>
@@ -25,7 +26,7 @@ export default function SuperAdminDashboard() {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `block px-4 py-2 rounded text-sm hover:bg-gray-100 ${isActive ? "bg-blue-100 font-semibold" : ""
+                `block px-4 py-2 rounded text-sm hover:bg-fuchsia-100 ${isActive ? "bg-purple-200 font-semibold" : ""
                 }`
               }
             >
@@ -35,10 +36,12 @@ export default function SuperAdminDashboard() {
         </nav>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content *
       <main className="flex-1 p-6">
         <Outlet />
       </main>
     </div>
   );
 }
+
+*/}

@@ -39,7 +39,7 @@ export default function Overview() {
     // 2) Firestore-driven state
     const [candidates, setCandidates] = useState([]); // { id, name }
     const [voteTotals, setVoteTotals] = useState({}); // { [candidateId]: totalVotes }
-    const [incidents, setIncidents] = useState([]); // { id, headline, location }
+    const [incidents, setIncidents] = useState([]); // { id, headline, description }
 
     const [loadingData, setLoadingData] = useState(true);
 
@@ -105,7 +105,7 @@ export default function Overview() {
             const list = incSnap.docs.map((doc) => ({
                 id: doc.id,
                 headline: doc.data().headline,
-                location: doc.data().location,
+                description: doc.data().description || "",
             }));
             if (isMounted) {
                 setIncidents(list);
@@ -117,11 +117,24 @@ export default function Overview() {
         };
     }, []);
 
-    // 5) Prepare data for the Bar chart via useMemo
+    // 5) Prepare data for Bar chart via useMemo
     const chartData = useMemo(() => {
         // Build arrays of labels (candidate names) and data (vote counts)
         const labels = candidates.map((c) => c.name);
         const dataValues = candidates.map((c) => voteTotals[c.id] || 0);
+
+        // Generate a distinct color for each candidate
+        const baseColors = [
+            "#3b82f6", // blue-500
+            "#ef4444", // red-500
+            "#10b981", // green-500
+            "#f59e0b", // yellow-500
+            "#8b5cf6", // purple-500
+            "#ec4899", // pink-500
+        ];
+        const backgroundColors = labels.map((_, idx) => {
+            return baseColors[idx % baseColors.length];
+        });
 
         return {
             labels,
@@ -129,7 +142,9 @@ export default function Overview() {
                 {
                     label: "Total Votes",
                     data: dataValues,
-                    backgroundColor: "rgba(37, 99, 235, 0.7)",
+                    backgroundColor: backgroundColors,
+                    barThickness: 16,       // reduce bar thickness
+                    maxBarThickness: 20,
                 },
             ],
         };
@@ -162,7 +177,11 @@ export default function Overview() {
             },
         },
         scales: {
-            x: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: "Number of Votes" } },
+            x: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 },
+                title: { display: true, text: "Number of Votes" },
+            },
             y: { title: { display: false } },
         },
     };
@@ -220,16 +239,22 @@ export default function Overview() {
                 )}
             </div>
 
-            {/* Incidents List (scrollable container) */}
+            {/* Incident Reports List */}
             <div className="bg-white rounded shadow p-4">
                 <h2 className="text-lg font-semibold mb-2">Incident Reports</h2>
                 {incidents.length === 0 ? (
                     <p className="text-sm text-gray-600">No incidents reported.</p>
                 ) : (
-                    <div className="h-24 overflow-y-auto space-y-1">
+                    <div className="space-y-2">
                         {incidents.map((inc) => (
-                            <div key={inc.id} className="text-sm text-gray-800">
-                                <strong>{inc.headline}</strong> — {inc.location}
+                            <div
+                                key={inc.id}
+                                className="text-sm text-gray-800 border-b pb-1"
+                            >
+                                <strong>{inc.headline}</strong>:{" "}
+                                {inc.description.length > 100
+                                    ? `${inc.description.slice(0, 110)}…`
+                                    : inc.description}
                             </div>
                         ))}
                     </div>

@@ -1,12 +1,12 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
+import AgentSidebar from "../components/AgentSidebar";
 
 export default function Dashboard() {
   return (
     <div className="min-h-screen flex bg-gray-50 pt-12 md:pt-0">
       {/* Sidebar component handles both desktop and mobile behaviors */}
-      <Sidebar />
+      <AgentSidebar />
 
       {/* 
         On desktop: add margin-left equal to sidebar width (w-64 = 16rem = 256px).

@@ -74,7 +74,7 @@ export default function Settings() {
                 {nameFeedback.text && (
                     <div
                         className={`text-sm p-1 rounded ${nameFeedback.type === "success"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-purple-100 text-fuchsia-700"
                             : "bg-red-100 text-red-700"
                             }`}
                     >
@@ -91,7 +91,7 @@ export default function Settings() {
                     />
                     <button
                         type="submit"
-                        className="self-start bg-blue-600 text-white p-2 rounded text-sm hover:bg-blue-700 transition"
+                        className="self-start bg-fuchsia-900 text-white p-2 rounded text-sm hover:bg-fuchsia-700 transition"
                     >
                         Update Name
                     </button>

@@ -16,15 +16,21 @@
     }
   ],
   "emulators": {
-    "functions": {
-      "port": 5001
-    },
+    "functions": {"port": 5001},
     "firestore": {
-      "port": 8080
+      "port": 8080,
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
     },
     "ui": {
       "enabled": true
     },
     "singleProjectMode": true
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "nam5",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

@@ -6,9 +6,9 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 export default function SuperAdminSidebar({ sidebarOpen, setSidebarOpen }) {
     const links = [
         { to: "/superadmin", label: "Dashboard" },
+        { to: "/superadmin/manage-candidates", label: "Manage Candidates" },
         { to: "/superadmin/manage-admins", label: "Manage Admins" },
         { to: "/superadmin/manage-agents", label: "Manage Agents" },
-        { to: "/superadmin/manage-candidates", label: "Manage Candidates" },
         { to: "/superadmin/review-incidents", label: "Review Incidents" },
         { to: "/superadmin/reports", label: "Reports" },
         { to: "/superadmin/settings", label: "Settings" },
@@ -45,7 +45,7 @@ export default function SuperAdminSidebar({ sidebarOpen, setSidebarOpen }) {
                             to={to}
                             end={to === "/superadmin"} // exact match for dashboard link
                             className={({ isActive }) =>
-                                `block px-4 py-2 rounded text-sm hover:bg-gray-100 ${isActive ? "bg-blue-100 font-semibold" : ""
+                                `block px-4 py-2 rounded text-sm hover:bg-fuchsia-100 ${isActive ? "bg-purple-200 font-semibold" : ""
                                 }`
                             }
                             onClick={() => setSidebarOpen(false)} // close on mobile

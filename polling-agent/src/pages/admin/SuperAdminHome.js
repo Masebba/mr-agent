@@ -41,7 +41,7 @@ export default function SuperAdminHome() {
     }, []);
 
     if (loading) {
-        return <p className="text-sm text-gray-600">Loading analytics…</p>;
+        return <p className="text-sm text-fuchsia-600">Loading analytics…</p>;
     }
 
     return (

@@ -21,6 +21,11 @@ import ManageAdmins from "./pages/admin/ManageAdmins";
 
 import Settings from "./pages/Settings"; // shared
 
+import AgentLayout from "./pages/AgentLayout";
+import Overview from "./pages/Overview";
+import Votes from "./pages/Votes";
+import Incidents from "./pages/Incidents";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -78,6 +83,24 @@ export default function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/superadmin" replace />} />
         </Route>
+
+ {/* Agent section (any signed‐in “agent” or “admin” can see) */}
+ <Route
+    path="/dashboard/*"
+    element={
+      <ProtectedRoute>
+        <AgentLayout />
+      </ProtectedRoute>
+    }
+  >
+    <Route index element={<Overview />} />
+    <Route path="votes" element={<Votes />} />
+    <Route path="incidents" element={<Incidents />} />
+    <Route path="settings" element={<Settings />} />
+    {/* Catch‐all: redirect unknown /dashboard paths to /dashboard */}
+    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+  </Route>
+
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
