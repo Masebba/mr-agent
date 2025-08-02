@@ -6,6 +6,7 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 export default function SuperAdminSidebar({ sidebarOpen, setSidebarOpen }) {
     const links = [
         { to: "/superadmin", label: "Dashboard" },
+        { to: "/superadmin/config", label: "Manage Location" },
         { to: "/superadmin/manage-candidates", label: "Manage Candidates" },
         { to: "/superadmin/manage-admins", label: "Manage Admins" },
         { to: "/superadmin/manage-agents", label: "Manage Agents" },

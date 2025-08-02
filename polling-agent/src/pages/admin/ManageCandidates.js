@@ -10,62 +10,71 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-
-// Position options
-const positions = [
-  "President",
-  "Member of Parliament",
-  "Woman Member of Parliament",
-  "Chairperson LCV",
-];
-// District options
-const districts = ["Butaleja"]; // extend as needed
+import { useConfig } from "../../context/ConfigContext";
 
 export default function ManageCandidates() {
   const [candidates, setCandidates] = useState([]);
   const [feedback, setFeedback] = useState({ text: "", type: "" });
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCand, setEditingCand] = useState(null);
+  // Consume config
+  const { districts, positions } = useConfig();
+
+  // Form state
   const [form, setForm] = useState({
     name: "",
-    position: positions[0],
-    district: districts[0],
+    position: positions[0] || "",
+    district: districts[0]?.name || "",
   });
 
-  // Filters state
-  const [filters, setFilters] = useState({ name: "", position: "", district: "" });
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  // Real-time listener
+  // Filters
+  const [filters, setFilters] = useState({
+    name: "",
+    position: "",
+    district: "",
+  });
+
+  // Load candidates
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "candidates"), (snap) => {
-      setCandidates(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(collection(db, "candidates"), (snap) =>
+      setCandidates(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
     return unsub;
   }, []);
 
+  // Open add/edit modal
   const openModal = (cand = null) => {
     if (cand) {
-      setEditingCand(cand.id);
-      setForm({ name: cand.name, position: cand.position, district: cand.district });
+      setEditingId(cand.id);
+      setForm({
+        name: cand.name,
+        position: cand.position,
+        district: cand.district,
+      });
     } else {
-      setEditingCand(null);
-      setForm({ name: "", position: positions[0], district: districts[0] });
+      setEditingId(null);
+      setForm({
+        name: "",
+        position: positions[0] || "",
+        district: districts[0]?.name || "",
+      });
     }
     setFeedback({ text: "", type: "" });
     setIsModalOpen(true);
   };
 
+  // Save candidate
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setFeedback({ text: "Name is required", type: "error" });
-      return;
+      return setFeedback({ text: "Name is required", type: "error" });
     }
     try {
-      if (editingCand) {
-        await updateDoc(doc(db, "candidates", editingCand), {
+      if (editingId) {
+        await updateDoc(doc(db, "candidates", editingId), {
           name: form.name.trim(),
           position: form.position,
           district: form.district,
@@ -86,6 +95,7 @@ export default function ManageCandidates() {
     }
   };
 
+  // Delete candidate
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this candidate?")) return;
     try {
@@ -109,7 +119,7 @@ export default function ManageCandidates() {
         <h2 className="text-2xl font-semibold">Manage Candidates</h2>
         <button
           onClick={() => openModal()}
-          className="bg-purple-950 text-white px-2 py-1 rounded hover:bg-fuchsia-900"
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
           + Add Candidate
         </button>
@@ -131,12 +141,12 @@ export default function ManageCandidates() {
           placeholder="Search name"
           value={filters.name}
           onChange={(e) => setFilters({ ...filters, name: e.target.value })}
-          className="border p-1 rounded text-sm flex-1"
+          className="flex-1 border p-2 rounded text-sm"
         />
         <select
           value={filters.position}
           onChange={(e) => setFilters({ ...filters, position: e.target.value })}
-          className="border p-1 rounded text-sm"
+          className="border p-2 rounded text-sm"
         >
           <option value="">All Positions</option>
           {positions.map((pos) => (
@@ -146,11 +156,11 @@ export default function ManageCandidates() {
         <select
           value={filters.district}
           onChange={(e) => setFilters({ ...filters, district: e.target.value })}
-          className="border p-1 rounded text-sm"
+          className="border p-2 rounded text-sm"
         >
           <option value="">All Districts</option>
           {districts.map((d) => (
-            <option key={d} value={d}>{d}</option>
+            <option key={d.id} value={d.name}>{d.name}</option>
           ))}
         </select>
       </div>
@@ -158,21 +168,21 @@ export default function ManageCandidates() {
       {/* Candidates Table */}
       <div className="bg-white rounded shadow overflow-x-auto">
         <table className="w-full text-sm table-auto">
-          <thead className="bg-fuchsia-100">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="p-1 text-left">Name</th>
-              <th className="p-1 text-left">Position</th>
-              <th className="p-1 text-left">District</th>
-              <th className="p-1 text-left">Actions</th>
+              <th className="p-2 text-left">Name</th>
+              <th className="p-2 text-left">Position</th>
+              <th className="p-2 text-left">District</th>
+              <th className="p-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((c) => (
               <tr key={c.id} className="border-t">
-                <td className="p-1">{c.name}</td>
-                <td className="p-1">{c.position}</td>
-                <td className="p-1">{c.district}</td>
-                <td className="p-1 space-x-2">
+                <td className="p-2">{c.name}</td>
+                <td className="p-2">{c.position}</td>
+                <td className="p-2">{c.district}</td>
+                <td className="p-2 space-x-2">
                   <button
                     onClick={() => openModal(c)}
                     className="text-blue-600 hover:underline text-sm"
@@ -190,7 +200,7 @@ export default function ManageCandidates() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-2 text-center text-fuchsia-500">
+                <td colSpan={4} className="p-2 text-center text-gray-500">
                   No candidates found.
                 </td>
               </tr>
@@ -203,7 +213,7 @@ export default function ManageCandidates() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-md space-y-4">
-            <h3 className="text-xl font-semibold">{editingCand ? "Edit Candidate" : "Add Candidate"}</h3>
+            <h3 className="text-xl font-semibold">{editingId ? "Edit Candidate" : "Add Candidate"}</h3>
             <form onSubmit={handleSave} className="space-y-3">
               <input
                 type="text"
@@ -228,7 +238,7 @@ export default function ManageCandidates() {
                 className="w-full border p-2 rounded text-sm"
               >
                 {districts.map((d) => (
-                  <option key={d} value={d}>{d}</option>
+                  <option key={d.id} value={d.name}>{d.name}</option>
                 ))}
               </select>
               <div className="flex justify-end space-x-2 pt-4">
@@ -243,7 +253,7 @@ export default function ManageCandidates() {
                   type="submit"
                   className="bg-purple-950 text-white px-4 py-2 rounded text-sm hover:bg-fuchsia-900"
                 >
-                  {editingCand ? "Save" : "Add"}
+                  {editingId ? "Save" : "Add"}
                 </button>
               </div>
             </form>

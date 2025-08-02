@@ -18,7 +18,7 @@ import SuperAdminLayout from "./pages/admin/SuperAdminLayout";
 import SuperAdminRoute from "./components/SuperAdminRoute";
 import SuperAdminHome from "./pages/admin/SuperAdminHome";
 import ManageAdmins from "./pages/admin/ManageAdmins";
-
+import ManageConfig from "./pages/admin/ManageConfig"; 
 import Settings from "./pages/Settings"; // shared
 
 import AgentLayout from "./pages/AgentLayout";
@@ -81,6 +81,7 @@ export default function App() {
           <Route path="review-incidents" element={<ReviewIncidents />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="config" element={<ManageConfig />} />
           <Route path="*" element={<Navigate to="/superadmin" replace />} />
         </Route>
 
