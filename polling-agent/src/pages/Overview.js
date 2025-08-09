@@ -17,75 +17,100 @@ import {
     getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext"; // adjust import if your hook/context is named differently
 
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Overview() {
-    // 1) Position & District selectors
-    const positions = ["President", "Parliament", "Chairperson LCV"];
+    const { currentUser, role } = useAuth(); // must provide uid and role
+    const uid = currentUser?.uid;
+
+    const positions = ["President", "Member of Parliament", "Woman MP", "Chairperson LCV"];
     const [position, setPosition] = useState("Parliament");
 
-    // District list must match adminHierarchy in Votes.js
-    const [districts] = useState(() => ["Butaleja"]);
-    const [district, setDistrict] = useState("Butaleja");
+    const [districts] = useState(() => ["Lira"]);
+    const [district, setDistrict] = useState("Lira");
 
-    // 2) Firestore-driven state
-    const [candidates, setCandidates] = useState([]); // { id, name }
-    const [voteTotals, setVoteTotals] = useState({}); // { [candidateId]: totalVotes }
-    const [incidents, setIncidents] = useState([]); // { id, headline, description }
+    const [candidates, setCandidates] = useState([]);
+    const [voteTotals, setVoteTotals] = useState({});
+    const [incidents, setIncidents] = useState([]);
 
     const [loadingData, setLoadingData] = useState(true);
+    const [errorMsg, setErrorMsg] = useState("");
 
-    // 3) Fetch candidates + aggregated votes when position or district changes
+    // Load candidates & votes
     useEffect(() => {
+        if (!currentUser) return;
+
         let isMounted = true;
         async function loadData() {
             setLoadingData(true);
+            setErrorMsg("");
 
-            // 3a) Load candidates for this position & district
-            const candQ = query(
-                collection(db, "candidates"),
-                where("position", "==", position),
-                where("district", "==", district)
-            );
-            const candSnap = await getDocs(candQ);
-            const candList = candSnap.docs.map((doc) => ({
-                id: doc.id,
-                name: doc.data().name,
-            }));
+            try {
+                // Load candidates
+                const candQ = query(
+                    collection(db, "candidates"),
+                    where("position", "==", position),
+                    where("district", "==", district)
+                );
+                const candSnap = await getDocs(candQ);
+                const candList = candSnap.docs.map((doc) => ({
+                    id: doc.id,
+                    name: doc.data().name,
+                }));
 
-            // 3b) Initialize totals map to zero
-            const totalsMap = {};
-            candList.forEach((c) => {
-                totalsMap[c.id] = 0;
-            });
+                // Init totals
+                const totalsMap = {};
+                candList.forEach((c) => {
+                    totalsMap[c.id] = 0;
+                });
 
-            // 3c) Load votes documents for position & district
-            const voteQ = query(
-                collection(db, "votes"),
-                where("position", "==", position),
-                where("district", "==", district)
-            );
-            const voteSnap = await getDocs(voteQ);
-            voteSnap.docs.forEach((vdoc) => {
-                const data = vdoc.data();
-                const cid = data.candidateId;
-                const count = data.votes || 0;
-                if (cid in totalsMap) {
-                    totalsMap[cid] += count;
+                // Load votes — role-aware
+                let voteQ;
+                if (role === "admin" || role === "superadmin") {
+                    voteQ = query(
+                        collection(db, "votes"),
+                        where("position", "==", position),
+                        where("district", "==", district)
+                    );
+                } else if (role === "agent") {
+                    // Only own votes
+                    voteQ = query(
+                        collection(db, "votes"),
+                        where("position", "==", position),
+                        where("district", "==", district),
+                        where("agentId", "==", uid)
+                    );
+                } else {
+                    // Unknown role
+                    setErrorMsg("Unknown role. Limited data displayed.");
+                    setLoadingData(false);
+                    return;
                 }
-            });
 
-            if (isMounted) {
-                setCandidates(candList);
-                setVoteTotals(totalsMap);
+                const voteSnap = await getDocs(voteQ);
+                voteSnap.docs.forEach((vdoc) => {
+                    const data = vdoc.data();
+                    const cid = data.candidateId;
+                    const count = data.votes || 0;
+                    if (cid in totalsMap) {
+                        totalsMap[cid] += count;
+                    }
+                });
+
+                if (isMounted) {
+                    setCandidates(candList);
+                    setVoteTotals(totalsMap);
+                    setLoadingData(false);
+                }
+            } catch (err) {
+                console.error("Error loading candidates/votes:", err);
+                if (err.code === "permission-denied") {
+                    setErrorMsg("You don't have permission to view this data.");
+                } else {
+                    setErrorMsg("Failed to load results. Please try again.");
+                }
                 setLoadingData(false);
             }
         }
@@ -94,47 +119,50 @@ export default function Overview() {
         return () => {
             isMounted = false;
         };
-    }, [position, district]);
+    }, [currentUser, role, uid, position, district]);
 
-    // 4) Fetch incidents once
+    // Load incidents (rules allow read for any auth user)
     useEffect(() => {
+        if (!currentUser) return;
+
         let isMounted = true;
         async function loadIncidents() {
-            const incQ = query(collection(db, "incidents"));
-            const incSnap = await getDocs(incQ);
-            const list = incSnap.docs.map((doc) => ({
-                id: doc.id,
-                headline: doc.data().headline,
-                description: doc.data().description || "",
-            }));
-            if (isMounted) {
-                setIncidents(list);
+            try {
+                const incQ = query(collection(db, "incidents"));
+                const incSnap = await getDocs(incQ);
+                const list = incSnap.docs.map((doc) => ({
+                    id: doc.id,
+                    headline: doc.data().headline,
+                    description: doc.data().description || "",
+                }));
+                if (isMounted) {
+                    setIncidents(list);
+                }
+            } catch (err) {
+                console.error("Error loading incidents:", err);
+                if (err.code === "permission-denied") {
+                    setErrorMsg("You don't have permission to view incident reports.");
+                }
             }
         }
         loadIncidents();
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [currentUser]);
 
-    // 5) Prepare data for Bar chart via useMemo
     const chartData = useMemo(() => {
-        // Build arrays of labels (candidate names) and data (vote counts)
         const labels = candidates.map((c) => c.name);
         const dataValues = candidates.map((c) => voteTotals[c.id] || 0);
-
-        // Generate a distinct color for each candidate
         const baseColors = [
-            "#3b82f6", // blue-500
-            "#ef4444", // red-500
-            "#10b981", // green-500
-            "#f59e0b", // yellow-500
-            "#8b5cf6", // purple-500
-            "#ec4899", // pink-500
+            "#3b82f6",
+            "#ef4444",
+            "#10b981",
+            "#f59e0b",
+            "#8b5cf6",
+            "#ec4899",
         ];
-        const backgroundColors = labels.map((_, idx) => {
-            return baseColors[idx % baseColors.length];
-        });
+        const backgroundColors = labels.map((_, idx) => baseColors[idx % baseColors.length]);
 
         return {
             labels,
@@ -143,14 +171,13 @@ export default function Overview() {
                     label: "Total Votes",
                     data: dataValues,
                     backgroundColor: backgroundColors,
-                    barThickness: 16,       // reduce bar thickness
+                    barThickness: 16,
                     maxBarThickness: 20,
                 },
             ],
         };
     }, [candidates, voteTotals]);
 
-    // 6) Chart.js options for horizontal bar (indexAxis: "y")
     const chartOptions = {
         indexAxis: "y",
         responsive: true,
@@ -161,10 +188,7 @@ export default function Overview() {
                 callbacks: {
                     label: function (context) {
                         const val = context.parsed.x;
-                        const totalAll = Object.values(voteTotals).reduce(
-                            (sum, v) => sum + v,
-                            0
-                        );
+                        const totalAll = Object.values(voteTotals).reduce((sum, v) => sum + v, 0);
                         const pct = totalAll > 0 ? ((val / totalAll) * 100).toFixed(1) : "0";
                         return `${val} votes (${pct}%)`;
                     },
@@ -188,6 +212,10 @@ export default function Overview() {
 
     return (
         <div className="p-6 space-y-6">
+            {errorMsg && (
+                <div className="p-2 bg-yellow-100 text-yellow-800 rounded">{errorMsg}</div>
+            )}
+
             {/* Selectors */}
             <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
                 <div className="flex-1 flex flex-col">
@@ -239,7 +267,7 @@ export default function Overview() {
                 )}
             </div>
 
-            {/* Incident Reports List */}
+            {/* Incident Reports */}
             <div className="bg-white rounded shadow p-4">
                 <h2 className="text-lg font-semibold mb-2">Incident Reports</h2>
                 {incidents.length === 0 ? (
@@ -247,10 +275,7 @@ export default function Overview() {
                 ) : (
                     <div className="space-y-2">
                         {incidents.map((inc) => (
-                            <div
-                                key={inc.id}
-                                className="text-sm text-gray-800 border-b pb-1"
-                            >
+                            <div key={inc.id} className="text-sm text-gray-800 border-b pb-1">
                                 <strong>{inc.headline}</strong>:{" "}
                                 {inc.description.length > 100
                                     ? `${inc.description.slice(0, 110)}…`

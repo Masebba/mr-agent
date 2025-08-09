@@ -5,10 +5,11 @@ import { NavLink } from "react-router-dom";
 export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
     const links = [
         { to: "/admin", label: "Dashboard" },
+        { to: "/admin/validate-entries", label: "Validate Entries" },
         { to: "/admin/manage-agents", label: "Manage Agents" },
         //       { to: "/admin/manage-candidates", label: "Manage Candidates" },
         { to: "/admin/review-incidents", label: "Review Incidents" },
-        { to: "/admin/reports", label: "Reports" },
+        //{ to: "/admin/reports", label: "Reports" },
         { to: "/admin/settings", label: "Settings" },
     ];
 

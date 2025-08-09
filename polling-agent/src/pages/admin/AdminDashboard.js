@@ -7,6 +7,7 @@ export default function AdminDashboard() {
         { to: "manage-agents", label: "Manage Agents" },
         //        { to: "manage-candidates", label: "Manage Candidates" },
         { to: "review-incidents", label: "Review Incidents" },
+        { to: "validate-entries", label: "Validate Entries" },
         { to: "reports", label: "Reports" },
     ];
 
