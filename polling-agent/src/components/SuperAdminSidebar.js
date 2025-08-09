@@ -10,6 +10,7 @@ export default function SuperAdminSidebar({ sidebarOpen, setSidebarOpen }) {
         { to: "/superadmin/manage-candidates", label: "Manage Candidates" },
         { to: "/superadmin/manage-admins", label: "Manage Admins" },
         { to: "/superadmin/manage-agents", label: "Manage Agents" },
+        { to: "/superadmin/validate-entries", label: "Validate Entries" },
         { to: "/superadmin/review-incidents", label: "Review Incidents" },
         { to: "/superadmin/reports", label: "Reports" },
         { to: "/superadmin/settings", label: "Settings" },
@@ -31,22 +32,22 @@ export default function SuperAdminSidebar({ sidebarOpen, setSidebarOpen }) {
             {/* Sidebar */}
             <aside
                 className={`
-          fixed inset-y-0 left-0 bg-white shadow-md overflow-y-auto transition-transform duration-200 z-40
+          fixed inset-y-0 left-0 bg-gray-200 shadow-md overflow-y-auto transition-transform duration-200 z-40
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:static md:shadow-none w-64
         `}
             >
                 <div className="p-4 border-b">
-                    <h1 className="text-xl font-bold">Super Admin</h1>
+                    <h1 className="text-xl font-bold text-center">Super Admin</h1>
                 </div>
                 <nav className="px-2 py-4 space-y-1">
                     {links.map(({ to, label }) => (
                         <NavLink
                             key={to}
                             to={to}
-                            end={to === "/superadmin"} // exact match for dashboard link
+                            end={to === "/superadmin"}
                             className={({ isActive }) =>
-                                `block px-4 py-2 rounded text-sm hover:bg-fuchsia-100 ${isActive ? "bg-purple-200 font-semibold" : ""
+                                `block px-4 py-2 rounded text-sm hover:bg-gray-100 ${isActive ? "bg-fuchsia-200 font-semibold" : ""
                                 }`
                             }
                             onClick={() => setSidebarOpen(false)} // close on mobile

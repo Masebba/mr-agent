@@ -4,9 +4,8 @@ import { NavLink, Outlet } from "react-router-dom";
 import { Menu } from "lucide-react"; // for the hamburger icon
 
 export default function DashboardLayout() {
-  // State to toggle sidebar on small screens
+  // toggle sidebar on small screens
   const [isOpen, setIsOpen] = useState(false);
-
   const navLinks = [
     { to: "overview", label: "Overview" },
     { to: "votes", label: "Vote Entry" },

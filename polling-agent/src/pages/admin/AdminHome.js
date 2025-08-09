@@ -14,7 +14,7 @@ import {
 
 // Administrative hierarchy shared across pages
 const adminHierarchy = {
-    Butaleja: {
+    Lira: {
         "Bukooli North": {
             "Bwikhonge Parish": ["Bukolu Village", "Bukuchony Village"],
             "Buseta Parish": ["Buseta Central", "Buseta East"],

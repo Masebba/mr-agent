@@ -3,14 +3,46 @@
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-
 admin.initializeApp();
-const db = admin.firestore();
 
-/**
- * Helper: Ensure the caller is “admin” or “superadmin”.
- * Throws an Error if not authorized.
- */
+exports.createAuthUser = functions.https.onCall(async (data, context) => {
+  // 1) Authorization check (only admin/superadmin)
+  const callerUid = context.auth.uid;
+  const callerSnap = await admin.firestore().doc(`users/${callerUid}`).get();
+  const callerRole = callerSnap.data()?.role;
+  if (!["admin", "superadmin"].includes(callerRole)) {
+    throw new functions.https.HttpsError("permission-denied", "Only admins can create users");
+  }
+
+  // 2) Create the Auth account
+  const { email, password, displayName, role, metadata } = data;
+  const userRecord = await admin.auth().createUser({
+    email,
+    password,
+    displayName,
+    disabled: false,
+  });
+
+  // 3) Attach a custom claim so signInWithEmailAndPassword sets context.auth.token.role
+  await admin.auth().setCustomUserClaims(userRecord.uid, { role });
+
+  // 4) Mirror into Firestore
+  await admin.firestore().doc(`users/${userRecord.uid}`).set({
+    uid: userRecord.uid,
+    email,
+    displayName,
+    role,
+    disabled: false,
+    metadata,           // district, etc
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { uid: userRecord.uid };
+});
+
+const db = admin.firestore();
+// Ensuring the caller is “admin” or “superadmin”.
+// Throws an Error if not authorized.
 async function assertCallerIsAdminOrSuper(uid) {
   const userDoc = await db.collection("users").doc(uid).get();
   if (!userDoc.exists) {
@@ -42,7 +74,6 @@ exports.createAuthUser = functions.https.onCall(async (data, context) => {
   }
 
   const callerUid = context.auth.uid;
-
   // 2) Verify caller’s role
   let callerRole;
   try {

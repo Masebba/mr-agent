@@ -5,7 +5,7 @@ import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../firebase";
 
 // Districts list
-const districts = ["Butaleja", "Budaka"]; // add more as needed
+const districts = ["Lira", "Budaka"]; // can add more as needed
 
 export default function ManageAdmins() {
   const [admins, setAdmins] = useState([]);

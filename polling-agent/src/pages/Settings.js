@@ -14,7 +14,7 @@ export default function Settings() {
     // State for password reset
     const [pwFeedback, setPwFeedback] = useState({ text: "", type: "" });
 
-    // Handle display name update
+    // Handle to display name update
     const handleUpdateName = async (e) => {
         e.preventDefault();
         setNameFeedback({ text: "", type: "" });

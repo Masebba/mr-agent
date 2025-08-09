@@ -41,18 +41,18 @@ export default function SuperAdminHome() {
     }, []);
 
     if (loading) {
-        return <p className="text-sm text-fuchsia-600">Loading analytics…</p>;
+        return <p className="text-sm text-fuchsia-600">Please Wait…</p>;
     }
 
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                 <div className="bg-white p-4 rounded shadow flex flex-col">
                     <span className="text-sm text-gray-500">Total Votes</span>
                     <span className="text-2xl font-semibold mt-2">{analytics.totalVotes}</span>
                 </div>
-                <div className="bg-white p-4 rounded shadow flex flex-col">
+                <div className="bg-fuchsia-100 p-4 rounded shadow flex flex-col">
                     <span className="text-sm text-gray-500">Total Incidents</span>
                     <span className="text-2xl font-semibold mt-2">{analytics.totalIncidents}</span>
                 </div>
@@ -60,7 +60,7 @@ export default function SuperAdminHome() {
                     <span className="text-sm text-gray-500">Total Admins</span>
                     <span className="text-2xl font-semibold mt-2">{analytics.totalAdmins}</span>
                 </div>
-                <div className="bg-white p-4 rounded shadow flex flex-col">
+                <div className="bg-fuchsia-100 p-4 rounded shadow flex flex-col">
                     <span className="text-sm text-gray-500">Total Agents</span>
                     <span className="text-2xl font-semibold mt-2">{analytics.totalAgents}</span>
                 </div>

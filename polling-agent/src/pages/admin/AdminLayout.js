@@ -13,7 +13,6 @@ export default function AdminLayout() {
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
             />
-
             {/* Main content */}
             <div className={`flex-1 flex flex-col md:pl-2 transition-all`}>
                 <div className="p-4 md:p-6">

@@ -6,7 +6,7 @@ import { db, functions } from "../../firebase";
 
 // Administrative hierarchy
 const adminHierarchy = {
-  Butaleja: {
+  Lira: {
     "Bukooli North": {
       "Bwikhonge Parish": ["Bukolu Village", "Bukuchony Village"],
       "Buseta Parish": ["Buseta Central", "Buseta East"],
@@ -158,7 +158,7 @@ export default function ManageAgents() {
           className="p-1 border rounded"
         >
           <option value="">All Districts</option>
-          {Object.keys(adminHierarchy).map((d) => (
+          {Object.keys(adminHierarchy || {}).map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
@@ -275,7 +275,7 @@ export default function ManageAgents() {
                   onChange={(e) => setForm({ ...form, district: e.target.value, subcounty: '', parish: '', village: '' })}
                   className="p-1 border rounded"
                 >
-                  {Object.keys(adminHierarchy).map((d) => (
+                  {Object.keys(adminHierarchy || {}).map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>

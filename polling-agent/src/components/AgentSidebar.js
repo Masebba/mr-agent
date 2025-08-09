@@ -21,13 +21,6 @@ export default function AgentSidebar({ sidebarOpen, setSidebarOpen }) {
                     {sidebarOpen ? "✕" : "☰"}
                 </button>
             </div>
-
-            {/* 
-         Sidebar now has:
-         - fixed position spanning full height: `h-screen fixed inset-y-0 left-0`
-         - width 64 (w-64)
-         - background white, shadow
-      */}
             <aside
                 className={`
           fixed inset-y-0 left-0 bg-white shadow-md overflow-y-auto transition-transform duration-200 z-40
